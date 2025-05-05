@@ -1,0 +1,20 @@
+{
+  "title": "¡Bienvenido!",
+  "test": "hola",
+  "sidebar_items": {
+  "profile":"Perfil",
+  "preferences": "Preferencias",
+  "book": "Reservar",
+  "myBookings": "Mis reservas",
+  "customerService": "Atención al cliente",
+  "admin": "Administración",
+  "iotDevices": "Dispositivos IoT",
+  "customerRequests": "Solicitudes de clientes",
+  "bookingsTracker": "Rastreador de reservas",
+  "requestStaff": "Solicitar personal"
+  }
+
+
+
+
+}
