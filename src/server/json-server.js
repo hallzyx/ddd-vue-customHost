@@ -218,50 +218,138 @@ server.patch('/service-requests/:id/complete', (req, res) => {
     }
 });
 
+
+
+
 /***
- * @endpoint PATCH /notifications/read
- * @description Marks notifications as read
- * @body {number} userId - ID of the user who owns the notifications
- * @body {array} notificationIds - Array of notification IDs to mark
- * @response {200} - Notifications marked as read
- * @response {400} - Error if required data is missing
- * @response {404} - Error if no notifications were found
+ * @endpoint PATCH /staff-requests/:id/complete
+ * @description Marks a staff request as completed
+ * @param {number} id - ID of the staff request
+ * @body {string} notes - Completion notes (optional)
+ * @response {200} - Staff request marked as completed
+ * @response {400} - Error if staff request is already completed
+ * @response {404} - Error if staff request not found
  * @response {500} - Internal server error
  */
-server.patch('/notifications/read', (req, res) => {
-    const { userId, notificationIds } = req.body;
+server.patch('/staff-requests/:id/complete', (req, res) => {
+    const staffRequestId = parseInt(req.params.id);
+    const { notes } = req.body;
 
-    if (!userId || !notificationIds || !Array.isArray(notificationIds)) {
-        return res.status(400).json({ error: 'Se requiere ID de usuario y lista de notificaciones' });
+    try {
+        const db = router.db;
+        const staffRequest = db.get('staff-requests').find({ id: staffRequestId }).value();
+
+        if (!staffRequest) {
+            return res.status(404).json({ error: 'Staff request not found' });
+        }
+
+        if (staffRequest.status === 'completed') {
+            return res.status(400).json({ error: 'Staff request already completed' });
+        }
+
+        // Update staff request
+        const updatedStaffRequest = {
+            ...staffRequest,
+            status: 'completed',
+            completedAt: new Date().toISOString(),
+            notes: notes ? staffRequest.notes + '\n' + notes : staffRequest.notes
+        };
+
+        db.get('staff-requests')
+            .find({ id: staffRequestId })
+            .assign(updatedStaffRequest)
+            .write();
+
+        // Create a system message for the guest
+        const serviceRequest = db.get('service-requests')
+            .find({ id: staffRequest.serviceRequestId })
+            .value();
+
+        res.json({
+            success: true,
+            message: 'Staff request marked as completed',
+            staffRequest: updatedStaffRequest
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Error completing staff request',
+            details: error.message
+        });
+    }
+});
+
+
+/***
+ * @endpoint POST /staff-requests/:id/create
+ * @description Creates a staff request and automatically assigns it to the staff member who creates it
+ * @param {number} id - ID of the service request to link
+ * @body {number} staffId - ID of the staff member creating and handling the request
+ * @body {string} title - Title for the staff request
+ * @body {string} description - Description of the request
+ * @body {string} priority - Priority level (high, normal, low)
+ * @body {string} notes - Additional notes (optional)
+ * @response {201} - Staff request created and assigned successfully
+ * @response {400} - Error if required parameters are missing
+ * @response {404} - Error if service request not found
+ * @response {500} - Internal server error
+ */
+server.post('/staff-requests/:id/create', (req, res) => {
+    const serviceRequestId = parseInt(req.params.id);
+    const { staffId, title, description, priority, notes } = req.body;
+
+    if (!staffId || !title || !description || !priority) {
+        return res.status(400).json({ error: 'Missing required fields (staffId, title, description, priority)' });
     }
 
     try {
         const db = router.db;
-        const notifications = db.get('notifications').value();
-        const userNotifications = notifications.filter(n =>
-            n.recipientId === parseInt(userId) && notificationIds.includes(n.id)
-        );
+        const serviceRequest = db.get('service-requests').find({ id: serviceRequestId }).value();
 
-        if (userNotifications.length === 0) {
-            return res.status(404).json({ error: 'No se encontraron notificaciones para marcar' });
+        if (!serviceRequest) {
+            return res.status(404).json({ error: 'Service request not found' });
         }
 
-        userNotifications.forEach(notification => {
-            db.get('notifications')
-                .find({ id: notification.id })
-                .assign({ status: 'read' })
-                .write();
-        });
+        const newStaffRequest = {
+            id: Date.now(),
+            serviceRequestId: serviceRequestId,
+            title,
+            description,
+            status: 'assigned',
+            priority,
+            createdAt: new Date().toISOString(),
+            handledByStaffId: parseInt(staffId),
+            assignedAt: new Date().toISOString(),
+            completedAt: null,
+            notes: notes || ''
+        };
 
-        res.json({
+        db.get('staff-requests').push(newStaffRequest).write();
+
+        // Update related service request
+        db.get('service-requests')
+            .find({ id: serviceRequestId })
+            .assign({
+                status: 'in-progress',
+                assignedStaffId: parseInt(staffId)
+            })
+            .write();
+
+        res.status(201).json({
             success: true,
-            message: `${userNotifications.length} notificaciones marcadas como leídas`,
-            updatedIds: userNotifications.map(n => n.id)
+            message: 'Staff request created and assigned successfully',
+            staffRequest: newStaffRequest
         });
     } catch (error) {
-        res.status(500).json({ error: 'Error al marcar notificaciones', details: error.message });
+        res.status(500).json({
+            error: 'Error creating staff request',
+            details: error.message
+        });
     }
 });
+
+
+
+
 
 /***
  * @endpoint POST /apply-guest-preferences

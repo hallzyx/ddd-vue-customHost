@@ -280,30 +280,45 @@
       "completedAt": "2025-05-01T18:45:00"
     }
   ],
-  "notifications": [
+  "staff-requests": [
     {
       "id": 1,
-      "recipientId": 5,
-      "title": "Nueva solicitud técnica",
-      "message": "Se ha asignado una nueva solicitud técnica en la habitación 201",
-      "status": "unread",
-      "createdAt": "2025-05-02T10:46:00"
+      "serviceRequestId": 2,
+      "title": "Technical support needed",
+      "description": "Air conditioner making strange noise in room 201",
+      "status": "assigned",
+      "priority": "high",
+      "createdAt": "2025-05-02T10:46:00",
+      "handledByStaffId": 5,
+      "assignedAt": "2025-05-02T11:00:00",
+      "completedAt": null,
+      "notes": "Check if it needs refrigerant"
     },
     {
       "id": 2,
-      "recipientId": 1,
-      "title": "Solicitud completada",
-      "message": "Su solicitud de plancha ha sido completada",
-      "status": "read",
-      "createdAt": "2025-05-01T18:46:00"
+      "serviceRequestId": 3,
+      "title": "Amenity delivery",
+      "description": "Iron requested in room 101",
+      "status": "completed",
+      "priority": "normal",
+      "createdAt": "2025-05-01T18:20:00",
+      "handledByStaffId": 4,
+      "assignedAt": "2025-05-01T18:30:00",
+      "completedAt": "2025-05-01T18:45:00",
+      "notes": "Delivered iron and ironing board"
     },
     {
       "id": 3,
-      "recipientId": 4,
-      "title": "Nueva solicitud de limpieza",
-      "message": "Hay una nueva solicitud de limpieza pendiente en la habitación 101",
-      "status": "unread",
-      "createdAt": "2025-05-02T09:16:00"
+      "serviceRequestId": 1,
+      "title": "Housekeeping needed",
+      "description": "Extra towels requested in room 101",
+      "status": "pending",
+      "priority": "normal",
+      "createdAt": "2025-05-02T09:16:00",
+      "handledByStaffId": null,
+      "assignedAt": null,
+      "completedAt": null,
+      "notes": ""
     }
   ]
 }

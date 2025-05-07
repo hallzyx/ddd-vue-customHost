@@ -38,13 +38,13 @@ export default {
           icon: 'pi pi-calendar-plus'
         },
         {
-          name: this.$t('sidebar_items.myBookings'),
+          name: this.$t('sidebar_items.my-bookings'),
           path: '/my-bookings',
           type: 'guest',
           icon: 'pi pi-list'
         },
         {
-          name: this.$t('sidebar_items.customerService'),
+          name: this.$t('sidebar_items.customer-service'),
           path: '/customer-service',
           type: 'guest',
           icon: 'pi pi-comments'
@@ -56,25 +56,25 @@ export default {
           icon: 'pi pi-shield'
         },
         {
-          name: this.$t('sidebar_items.iotDevices'),
+          name: this.$t('sidebar_items.iot-devices'),
           path: '/guest-experience-devices',
           type: 'staff',
           icon: 'pi pi-mobile'
         },
         {
-          name: this.$t('sidebar_items.customerRequests'),
+          name: this.$t('sidebar_items.customer-requests'),
           path: '/customer-requests',
           type: 'staff',
           icon: 'pi pi-inbox'
         },
         {
-          name: this.$t('sidebar_items.bookingsTracker'),
+          name: this.$t('sidebar_items.bookings-tracker'),
           path: '/bookings-tracker',
           type: 'staff',
           icon: 'pi pi-chart-line'
         },
         {
-          name: this.$t('sidebar_items.requestStaff'),
+          name: this.$t('sidebar_items.request-staff'),
           path: '/request-staff',
           type: 'staff',
           icon: 'pi pi-users'
