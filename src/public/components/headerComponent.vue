@@ -21,13 +21,13 @@ export default {
 </script>
 
 <template>
-  <pv-toolbar>
+  <pv-toolbar style="background: var(--color-secondary); color: var(--color-primary-light);">
     <template #start >
       <div class="flex gap-3 justify-content-center align-items-center">
         <button class="border-none bg-transparent cursor-pointer" @click="toggleMenu">
           <i class="pi pi-bars" />
         </button>
-        <span>CustomHost</span>
+        <span class="font-semibold text-2xl">Custom Host</span>
       </div>
 
     </template>
@@ -38,5 +38,11 @@ export default {
 </template>
 
 <style scoped>
-
+  span{
+    font-family: "Anta", sans-serif;
+    letter-spacing: max(1px, 0.1vw);
+  }
+  button{
+    color: var(--color-primary-light);
+  }
 </style>

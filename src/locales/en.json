@@ -1,18 +1,17 @@
 {
   "title": "Welcome!",
   "test": "hola",
-  "sidebar_items":
-    {
-      "profile":"Profile",
+  "sidebar_items":{
+    "profile":"Profile",
     "preferences": "Preferences",
     "book": "Book",
-    "myBookings": "My bookings",
-    "customerService": "Customer service",
+    "my-bookings": "My bookings",
+    "customer-service": "Customer service",
     "admin": "Admin",
-    "iotDevices": "IoT devices",
-    "customerRequests": "Customer requests",
-    "bookingsTracker": "Bookings tracker",
-    "requestStaff": "Request Staff"
+    "iot-devices": "IoT devices",
+    "customer-requests": "Customer requests",
+    "bookings-tracker": "Bookings tracker",
+    "request-staff": "Request Staff"
     }
 
 }

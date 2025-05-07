@@ -5,13 +5,13 @@
   "profile":"Perfil",
   "preferences": "Preferencias",
   "book": "Reservar",
-  "myBookings": "Mis reservas",
-  "customerService": "Atención al cliente",
+  "my-bookings": "Mis reservas",
+  "customer-service": "Atención al cliente",
   "admin": "Administración",
-  "iotDevices": "Dispositivos IoT",
-  "customerRequests": "Solicitudes de clientes",
-  "bookingsTracker": "Rastreador de reservas",
-  "requestStaff": "Solicitar personal"
+  "iot-devices": "Dispositivos IoT",
+  "customer-requests": "Solicitudes de clientes",
+  "bookings-tracker": "Rastreador de reservas",
+  "request-staff": "Solicitar personal"
   }
 
 

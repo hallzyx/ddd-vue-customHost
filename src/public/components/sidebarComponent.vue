@@ -21,7 +21,7 @@ export default {
       return [
         {
           name: this.$t('sidebar_items.profile'),
-          path: '/profile',
+          path: '/home',
           type: 'both',
           icon: 'pi pi-user'
         },
@@ -57,7 +57,7 @@ export default {
         },
         {
           name: this.$t('sidebar_items.iotDevices'),
-          path: '/iot-devices',
+          path: '/guest-experience-devices',
           type: 'staff',
           icon: 'pi pi-mobile'
         },
@@ -108,9 +108,11 @@ export default {
       :visible="visible"
       :dismissable="true"
       @update:visible="updateVisibility"
+      style="background: var(--color-secondary-light); color: var(--color-slate); border: none"
+
   >
     <div class="sidebar-header">
-      <h3>{{ $t('title') }}</h3>
+      <h3 class="text-2xl">{{ $t('title') }}</h3>
     </div>
 
     <div class="sidebar-content">
@@ -131,10 +133,6 @@ export default {
 </template>
 
 <style scoped>
-.sidebar-container {
-  width: 250px;
-  max-width: 90vw;
-}
 
 .sidebar-header {
   padding: 1rem;

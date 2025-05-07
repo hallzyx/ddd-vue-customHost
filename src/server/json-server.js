@@ -1,0 +1,367 @@
+// json-server.js
+import jsonServer from 'json-server';
+
+const server = jsonServer.create();
+const router = jsonServer.router('src/server/db.json');
+const middlewares = jsonServer.defaults();
+const port = 3000;
+
+const routes= {
+    "/api/v1/*": "/$1"
+}
+
+server.use(middlewares);
+
+server.use(jsonServer.bodyParser);
+
+server.use(jsonServer.rewriter(routes));
+/***
+ * @endpoint GET /rooms/available
+ * @description Gets rooms available for a specific date range
+ * @query {string} checkIn - Check-in date (ISO format)
+ * @query {string} checkOut - Check-out date (ISO format)
+ * @response {200} - List of available rooms
+ * @response {400} - Error if dates are missing, invalid format or incorrect
+ * @response {500} - Internal server error
+ */
+server.get('/rooms/available', (req, res) => {
+    const { checkIn, checkOut } = req.query;
+
+    if (!checkIn || !checkOut) {
+        return res.status(400).json({ error: 'Se requieren fechas de check-in y check-out' });
+    }
+
+    try {
+        const db = router.db;
+        const rooms = db.get('rooms').value();
+        const bookings = db.get('bookings').value();
+
+        // Filtrar habitaciones ocupadas en ese rango de fechas
+        const checkInDate = new Date(checkIn);
+        const checkOutDate = new Date(checkOut);
+
+        if (isNaN(checkInDate) || isNaN(checkOutDate)) {
+            return res.status(400).json({ error: 'Formato de fecha inválido' });
+        }
+
+        if (checkInDate >= checkOutDate) {
+            return res.status(400).json({ error: 'La fecha de check-out debe ser posterior al check-in' });
+        }
+
+        const bookedRoomIds = bookings
+            .filter(b => {
+                const bookingCheckIn = new Date(b.checkInDate);
+                const bookingCheckOut = new Date(b.checkOutDate);
+                return (
+                    (bookingCheckIn < checkOutDate && bookingCheckOut > checkInDate) &&
+                    (b.status === 'active' || b.status === 'confirmed')
+                );
+            })
+            .map(b => b.roomId);
+
+        // Filtrar habitaciones disponibles
+        const availableRooms = rooms.filter(room =>
+            !bookedRoomIds.includes(room.id) && room.status === 'available'
+        );
+
+        res.json(availableRooms);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al procesar la solicitud', details: error.message });
+    }
+});
+
+/***
+ * @endpoint POST /bookings/create
+ * @description Creates a new room booking with validations
+ * @body {number} userId - ID of the user making the booking
+ * @body {number} roomId - ID of the room to book
+ * @body {string} checkInDate - Check-in date (ISO format)
+ * @body {string} checkOutDate - Check-out date (ISO format)
+ * @body {string} specialRequests - Special requests (optional)
+ * @response {201} - Booking successfully created
+ * @response {400} - Error if required data is missing or room is unavailable
+ * @response {404} - Error if room does not exist
+ * @response {409} - Error if there is an overlap with another booking
+ * @response {500} - Internal server error
+ */
+server.post('/bookings/create', (req, res) => {
+    const { userId, roomId, checkInDate, checkOutDate, specialRequests } = req.body;
+
+    if (!userId || !roomId || !checkInDate || !checkOutDate) {
+        return res.status(400).json({ error: 'Faltan datos obligatorios para la reserva' });
+    }
+
+    try {
+        const db = router.db;
+        const room = db.get('rooms').find({ id: parseInt(roomId) }).value();
+
+        if (!room) {
+            return res.status(404).json({ error: 'Habitación no encontrada' });
+        }
+
+        if (room.status !== 'available') {
+            return res.status(400).json({ error: 'La habitación no está disponible' });
+        }
+
+        const requestCheckIn = new Date(checkInDate);
+        const requestCheckOut = new Date(checkOutDate);
+
+        const existingBookings = db.get('bookings')
+            .filter(booking =>
+                booking.roomId === parseInt(roomId) &&
+                (booking.status === 'active' || booking.status === 'confirmed')
+            )
+            .value();
+
+        const hasOverlap = existingBookings.some(booking => {
+            const bookingCheckIn = new Date(booking.checkInDate);
+            const bookingCheckOut = new Date(booking.checkOutDate);
+
+            return (requestCheckIn < bookingCheckOut && requestCheckOut > bookingCheckIn);
+        });
+
+        if (hasOverlap) {
+            return res.status(409).json({
+                error: 'La habitación ya está reservada en ese intervalo de fechas'
+            });
+        }
+
+        const days = Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24));
+        const dailyRate = room.type === 'suite' ? 150 : 100;
+        const totalPrice = dailyRate * days;
+
+        const newBooking = {
+            id: Date.now(),
+            userId: parseInt(userId),
+            roomId: parseInt(roomId),
+            checkInDate,
+            checkOutDate,
+            status: 'confirmed',
+            totalPrice,
+            paymentStatus: 'pending',
+            specialRequests: specialRequests || '',
+            createdAt: new Date().toISOString()
+        };
+
+        db.get('bookings').push(newBooking).write();
+
+        res.status(201).json({
+            success: true,
+            message: 'Reserva creada correctamente',
+            booking: newBooking
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al procesar la reserva', details: error.message });
+    }
+});
+
+/***
+ * @endpoint PATCH /service-requests/:id/complete
+ * @description Marks a service request as completed
+ * @param {number} id - ID of the request to complete
+ * @body {number} staffId - ID of the staff who completed the request
+ * @body {string} notes - Completion notes (optional)
+ * @response {200} - Request marked as completed
+ * @response {400} - Error if staffId is missing or request is already completed
+ * @response {404} - Error if request does not exist
+ * @response {500} - Internal server error
+ */
+server.patch('/service-requests/:id/complete', (req, res) => {
+    const { staffId, notes } = req.body;
+    const requestId = parseInt(req.params.id);
+
+    if (!staffId) {
+        return res.status(400).json({ error: 'Se requiere ID del personal que completó la solicitud' });
+    }
+
+    try {
+        const db = router.db;
+        const request = db.get('service-requests').find({ id: requestId }).value();
+
+        if (!request) {
+            return res.status(404).json({ error: 'Solicitud no encontrada' });
+        }
+
+        if (request.status === 'completed') {
+            return res.status(400).json({ error: 'Esta solicitud ya está completada' });
+        }
+
+        // Actualizar solicitud
+        db.get('service-requests')
+            .find({ id: requestId })
+            .assign({
+                status: 'completed',
+                assignedStaffId: parseInt(staffId),
+                completedAt: new Date().toISOString(),
+                completionNotes: notes || ''
+            })
+            .write();
+
+        const newNotification = {
+            id: Date.now(),
+            recipientId: request.userId,
+            title: 'Solicitud completada',
+            message: `Su solicitud de "${request.requestType}" ha sido completada.`,
+            status: 'unread',
+            createdAt: new Date().toISOString()
+        };
+
+        db.get('notifications').push(newNotification).write();
+
+        res.json({
+            success: true,
+            message: 'Solicitud marcada como completada',
+            notificationSent: true
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al completar la solicitud', details: error.message });
+    }
+});
+
+/***
+ * @endpoint PATCH /notifications/read
+ * @description Marks notifications as read
+ * @body {number} userId - ID of the user who owns the notifications
+ * @body {array} notificationIds - Array of notification IDs to mark
+ * @response {200} - Notifications marked as read
+ * @response {400} - Error if required data is missing
+ * @response {404} - Error if no notifications were found
+ * @response {500} - Internal server error
+ */
+server.patch('/notifications/read', (req, res) => {
+    const { userId, notificationIds } = req.body;
+
+    if (!userId || !notificationIds || !Array.isArray(notificationIds)) {
+        return res.status(400).json({ error: 'Se requiere ID de usuario y lista de notificaciones' });
+    }
+
+    try {
+        const db = router.db;
+        const notifications = db.get('notifications').value();
+        const userNotifications = notifications.filter(n =>
+            n.recipientId === parseInt(userId) && notificationIds.includes(n.id)
+        );
+
+        if (userNotifications.length === 0) {
+            return res.status(404).json({ error: 'No se encontraron notificaciones para marcar' });
+        }
+
+        userNotifications.forEach(notification => {
+            db.get('notifications')
+                .find({ id: notification.id })
+                .assign({ status: 'read' })
+                .write();
+        });
+
+        res.json({
+            success: true,
+            message: `${userNotifications.length} notificaciones marcadas como leídas`,
+            updatedIds: userNotifications.map(n => n.id)
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al marcar notificaciones', details: error.message });
+    }
+});
+
+/***
+ * @endpoint POST /apply-guest-preferences
+ * @description Applies guest preferences to the IoT devices in a room
+ * @body {number} guestId - ID of the guest
+ * @body {number} roomId - ID of the room
+ * @response {200} - Preferences successfully applied
+ * @response {400} - Error if guestId or roomId is missing
+ * @response {404} - Error if guest doesn't exist or no devices in the room
+ * @response {500} - Internal server error
+ */
+server.post('/apply-guest-preferences', (req, res) => {
+    const db = router.db;
+    const { guestId, roomId } = req.body;
+
+    if (!guestId || !roomId) {
+        return res.status(400).json({ error: 'Se requiere guestId y roomId' });
+    }
+
+    try {
+        const guest = db.get('users').find({ id: parseInt(guestId) }).value();
+        const devices = db.get('iot-devices').filter({ roomId: parseInt(roomId) }).value();
+
+        if (!guest) {
+            return res.status(404).json({ error: 'Huésped no encontrado' });
+        }
+
+        if (devices.length === 0) {
+            return res.status(404).json({ error: 'No hay dispositivos en esa habitación' });
+        }
+
+        // Aplicar preferencias a los dispositivos
+        const updatedDevices = devices.map(device => {
+            const updatedDevice = { ...device };
+
+            // Aplicar preferencias según el tipo de dispositivo
+            if (device.deviceType === 'thermostat' && guest.preferences?.temperature) {
+                updatedDevice.currentState = {
+                    ...updatedDevice.currentState,
+                    temperature: guest.preferences.temperature
+                };
+            } else if (device.deviceType === 'light' && guest.preferences?.lighting) {
+                updatedDevice.currentState = {
+                    ...updatedDevice.currentState,
+                    brightness: guest.preferences.lighting.brightness,
+                    color: guest.preferences.lighting.color,
+                    isOn: true
+                };
+            } else if (device.deviceType === 'curtains' && guest.preferences?.curtains) {
+                updatedDevice.currentState = {
+                    ...updatedDevice.currentState,
+                    position: guest.preferences.curtains
+                };
+            } else if (device.deviceType === 'tv' && guest.preferences?.tvVolume) {
+                updatedDevice.currentState = {
+                    ...updatedDevice.currentState,
+                    volume: guest.preferences.tvVolume
+                };
+            }
+
+            updatedDevice.lastUpdated = new Date().toISOString();
+
+            // Actualizar en la base de datos (corregido nombre de colección)
+            db.get('iot-devices')
+                .find({ id: device.id })
+                .assign(updatedDevice)
+                .write();
+
+            return updatedDevice;
+        });
+
+        // Actualizar la habitación (corregido nombre de campo)
+        db.get('rooms')
+            .find({ id: parseInt(roomId) })
+            .assign({
+                status: 'occupied',
+                currentUserId: parseInt(guestId)
+            })
+            .write();
+
+        res.json({
+            success: true,
+            message: 'Preferencias aplicadas correctamente',
+            devices: updatedDevices
+        });
+    } catch (error) {
+        res.status(500).json({
+            error: 'Error al aplicar preferencias',
+            details: error.message
+        });
+    }
+});
+
+server.use(jsonServer.rewriter({
+
+}));
+
+server.use(router);
+
+server.listen(port, () => {
+console.log(`JSON Server listening => http://localhost:${port}`);
+});
+

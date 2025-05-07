@@ -14,9 +14,13 @@ export default {
 </script>
 
 <template>
-  <pv-select-button v-model="$i18n.locale" :options=languages class="uppercase" />
+  <pv-select-button v-model="$i18n.locale" :options=languages class="tl-lang uppercase"
+
+    />
 </template>
 
 <style scoped>
-
+.tl-lang button {
+  background: var(--color-primary-light) !important;
+}
 </style>
