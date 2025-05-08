@@ -1,6 +1,5 @@
 // json-server.js
 import jsonServer from 'json-server';
-
 const server = jsonServer.create();
 const router = jsonServer.router('src/server/db.json');
 const middlewares = jsonServer.defaults();
@@ -15,6 +14,95 @@ server.use(middlewares);
 server.use(jsonServer.bodyParser);
 
 server.use(jsonServer.rewriter(routes));
+
+
+
+/**
+ * @middleware Hotel Filter Middleware
+ * @description Automatically filters resources by hotelId for multi-tenancy support
+ * @header {string} X-Hotel-Id - ID of the hotel to filter data by (required)
+ * @affects The following resources: users, rooms, bookings, iot-devices, service-requests, staff-requests, preferences
+ * @behavior Only affects GET requests and complete listings (not individual resources)
+ * @example
+ * // Request:
+ * // GET /rooms
+ * // Headers: { "X-Hotel-Id": "1" }
+ * //
+ * // Internally equivalent to:
+ * // GET /rooms?hotelId=1 -> But protected.
+ */
+
+server.use((req, res, next) => {
+    if (req.method === 'GET') {
+        // Obtener el hotelId del header de la petición
+        const hotelId = req.headers['x-hotel-id'];
+
+        if (hotelId) {
+
+            const hotelResources = [
+                'users', 'rooms', 'bookings', 'iot-devices',
+                'service-requests', 'staff-requests', 'preferences'
+            ];
+
+            const urlParts = req.path.split('/');
+            const resource = urlParts[1]; // Example: /rooms/1 -> rooms
+
+            if (hotelResources.includes(resource) && !urlParts[2]) {
+                req.query.hotelId = hotelId;
+                console.log(`Aplicando filtro hotelId=${hotelId} para ${resource}`);
+            }
+        }
+    }
+    next();
+});
+
+
+
+/**
+ * @endpoint POST /login
+ * @description Authenticates a user and returns their data including hotelId
+ * @body {string} email - User's email address
+ * @body {string} password - User's password
+ * @response {200} - Successful login with user data
+ * @response {401} - Invalid credentials
+ * @example
+ * // Request:
+ * // POST /login
+ * // Body: { "email": "carlos.rodriguez@hotel.com", "password": "password123" }
+ * //
+ * // Successful response:
+ * // {
+ * //   "success": true,
+ * //   "user": {
+ * //     "id": 3,
+ * //     "hotelId": 1,
+ * //     "firstName": "Carlos",
+ * //     "lastName": "Rodríguez",
+ * //     "role": "admin"
+ * //   }
+ * // }
+ */
+server.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    const db = router.db;
+    const user = db.get('users').find({ email }).value();
+
+    if (user && user.password === password) {
+        res.json({
+            success: true,
+            user: {
+                id: user.id,
+                hotelId: user.hotelId,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role
+            }
+        });
+    } else {
+        res.status(401).json({ success: false, message: 'Credenciales incorrectas' });
+    }
+});
+
 /***
  * @endpoint GET /rooms/available
  * @description Gets rooms available for a specific date range

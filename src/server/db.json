@@ -1,28 +1,100 @@
 {
+  "hotels": [
+    {
+      "id": 1,
+      "name": "Hotel Madrid Center",
+      "address": "Calle Gran Vía 123, Madrid",
+      "email": "info@hotelmc.com",
+      "phone": "+34900111222",
+      "status": "active",
+      "createdAt": "2024-01-10T08:00:00",
+      "subscriptionId": 1
+    },
+    {
+      "id": 2,
+      "name": "Barcelona Beach Resort",
+      "address": "Paseo Marítimo 45, Barcelona",
+      "email": "info@barcelonabeach.com",
+      "phone": "+34900333444",
+      "status": "active",
+      "createdAt": "2024-02-15T10:30:00",
+      "subscriptionId": 2
+    }
+  ],
+  "subscriptions": [
+    {
+      "id": 1,
+      "hotelId": 1,
+      "status": "active",
+      "startDate": "2024-01-10T08:00:00",
+      "endDate": "2025-01-10T08:00:00",
+      "maxRooms": 200,
+      "maxStaff": 50
+    },
+    {
+      "id": 2,
+      "hotelId": 2,
+      "status": "active",
+      "startDate": "2024-02-15T10:30:00",
+      "endDate": "2025-02-15T10:30:00",
+      "maxRooms": 100,
+      "maxStaff": 20
+    }
+  ],
+  "payments": [
+    {
+      "id": 1,
+      "subscriptionId": 1,
+      "hotelId": 1,
+      "amount": 4800,
+      "currency": "EUR",
+      "paymentMethod": "credit_card",
+      "status": "completed",
+      "transactionId": "txn_1234567890",
+      "createdAt": "2024-01-10T08:15:00"
+    },
+    {
+      "id": 2,
+      "subscriptionId": 2,
+      "hotelId": 2,
+      "amount": 2400,
+      "currency": "EUR",
+      "paymentMethod": "bank_transfer",
+      "status": "completed",
+      "transactionId": "txn_0987654321",
+      "createdAt": "2024-02-15T11:00:00"
+    }
+  ],
   "users": [
     {
       "id": 1,
+      "hotelId": 1,
       "firstName": "Juan",
       "lastName": "Pérez",
       "email": "juan.perez@email.com",
+      "password": "juan123",
       "phone": "+34600123456",
       "role": "guest",
       "createdAt": "2025-01-15T10:30:00"
     },
     {
       "id": 2,
+      "hotelId": 1,
       "firstName": "María",
       "lastName": "González",
       "email": "maria.gonzalez@email.com",
+      "password": "maria123",
       "phone": "+34600789012",
       "role": "guest",
       "createdAt": "2025-02-02T14:15:00"
     },
     {
       "id": 3,
+      "hotelId": 1,
       "firstName": "Carlos",
       "lastName": "Rodríguez",
       "email": "carlos.rodriguez@hotel.com",
+      "password": "carlos123",
       "phone": "+34600111222",
       "role": "admin",
       "department": "Management",
@@ -30,9 +102,11 @@
     },
     {
       "id": 4,
+      "hotelId": 1,
       "firstName": "Ana",
       "lastName": "López",
       "email": "ana.lopez@hotel.com",
+      "password": "ana123",
       "phone": "+34600333444",
       "role": "staff",
       "department": "Housekeeping",
@@ -40,19 +114,34 @@
     },
     {
       "id": 5,
+      "hotelId": 1,
       "firstName": "David",
       "lastName": "Martínez",
       "email": "david.martinez@hotel.com",
+      "password": "david123",
       "phone": "+34600555666",
       "role": "staff",
       "department": "Technical Support",
       "createdAt": "2024-07-20T10:15:00"
+    },
+    {
+      "id": 6,
+      "hotelId": 2,
+      "firstName": "Elena",
+      "lastName": "Fernández",
+      "email": "elena@barcelonabeach.com",
+      "password": "elena123",
+      "phone": "+34600777888",
+      "role": "admin",
+      "department": "Management",
+      "createdAt": "2024-02-15T11:30:00"
     }
   ],
   "preferences": [
     {
       "id": 1,
       "userId": 1,
+      "hotelId": 1,
       "temperature": 22,
       "lighting": {
         "brightness": 80,
@@ -65,6 +154,7 @@
     {
       "id": 2,
       "userId": 2,
+      "hotelId": 1,
       "temperature": 24,
       "lighting": {
         "brightness": 60,
@@ -78,6 +168,7 @@
   "rooms": [
     {
       "id": 101,
+      "hotelId": 1,
       "type": "standard",
       "capacity": 2,
       "floor": 1,
@@ -86,6 +177,7 @@
     },
     {
       "id": 102,
+      "hotelId": 1,
       "type": "standard",
       "capacity": 2,
       "floor": 1,
@@ -94,6 +186,7 @@
     },
     {
       "id": 201,
+      "hotelId": 1,
       "type": "deluxe",
       "capacity": 3,
       "floor": 2,
@@ -102,10 +195,20 @@
     },
     {
       "id": 301,
+      "hotelId": 1,
       "type": "suite",
       "capacity": 4,
       "floor": 3,
       "status": "maintenance",
+      "currentUserId": null
+    },
+    {
+      "id": 101,
+      "hotelId": 2,
+      "type": "standard",
+      "capacity": 2,
+      "floor": 1,
+      "status": "available",
       "currentUserId": null
     }
   ],
@@ -113,6 +216,7 @@
     {
       "id": 1,
       "userId": 1,
+      "hotelId": 1,
       "roomId": 101,
       "checkInDate": "2025-05-01T14:00:00",
       "checkOutDate": "2025-05-05T12:00:00",
@@ -125,6 +229,7 @@
     {
       "id": 2,
       "userId": 2,
+      "hotelId": 1,
       "roomId": 201,
       "checkInDate": "2025-05-02T15:30:00",
       "checkOutDate": "2025-05-07T11:00:00",
@@ -137,6 +242,7 @@
     {
       "id": 3,
       "userId": 1,
+      "hotelId": 1,
       "roomId": 102,
       "checkInDate": "2025-06-10T14:00:00",
       "checkOutDate": "2025-06-15T12:00:00",
@@ -150,6 +256,7 @@
   "iot-devices": [
     {
       "id": 1,
+      "hotelId": 1,
       "deviceType": "thermostat",
       "brand": "SmartTemp",
       "model": "ST-2000",
@@ -163,6 +270,7 @@
     },
     {
       "id": 2,
+      "hotelId": 1,
       "deviceType": "light",
       "brand": "LuxControl",
       "model": "LC-500",
@@ -177,6 +285,7 @@
     },
     {
       "id": 3,
+      "hotelId": 1,
       "deviceType": "curtains",
       "brand": "AutoDrape",
       "model": "AD-100",
@@ -189,6 +298,7 @@
     },
     {
       "id": 4,
+      "hotelId": 1,
       "deviceType": "tv",
       "brand": "ViewTech",
       "model": "VT-4K",
@@ -203,6 +313,7 @@
     },
     {
       "id": 5,
+      "hotelId": 1,
       "deviceType": "thermostat",
       "brand": "SmartTemp",
       "model": "ST-2000",
@@ -216,6 +327,7 @@
     },
     {
       "id": 6,
+      "hotelId": 1,
       "deviceType": "light",
       "brand": "LuxControl",
       "model": "LC-500",
@@ -230,6 +342,7 @@
     },
     {
       "id": 7,
+      "hotelId": 1,
       "deviceType": "thermostat",
       "brand": "SmartTemp",
       "model": "ST-2000",
@@ -246,6 +359,7 @@
     {
       "id": 1,
       "userId": 1,
+      "hotelId": 1,
       "roomId": 101,
       "requestType": "housekeeping",
       "description": "Necesito toallas extras, por favor",
@@ -258,6 +372,7 @@
     {
       "id": 2,
       "userId": 2,
+      "hotelId": 1,
       "roomId": 201,
       "requestType": "technical",
       "description": "El aire acondicionado hace ruido extraño",
@@ -270,6 +385,7 @@
     {
       "id": 3,
       "userId": 1,
+      "hotelId": 1,
       "roomId": 101,
       "requestType": "amenity",
       "description": "¿Podrían traer una plancha?",
@@ -283,6 +399,7 @@
   "staff-requests": [
     {
       "id": 1,
+      "hotelId": 1,
       "serviceRequestId": 2,
       "title": "Technical support needed",
       "description": "Air conditioner making strange noise in room 201",
@@ -296,6 +413,7 @@
     },
     {
       "id": 2,
+      "hotelId": 1,
       "serviceRequestId": 3,
       "title": "Amenity delivery",
       "description": "Iron requested in room 101",
@@ -309,6 +427,7 @@
     },
     {
       "id": 3,
+      "hotelId": 1,
       "serviceRequestId": 1,
       "title": "Housekeeping needed",
       "description": "Extra towels requested in room 101",
